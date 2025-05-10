@@ -1,0 +1,41 @@
+echo "# Hospital-Database" >> README.md
+git init
+git add README.md
+git commit -m "first commit"
+git branch -M main
+git remote add origin https://github.com/stellar-ninja/Hospital-Database.git
+git push -u origin main
+
+CREATE SCHEMA Hospital;
+USE Hospital;
+
+DROP TABLE IF EXISTS Doctor,
+Specialty,
+Patient,
+Nurse,
+AuthorizedStaff,
+Department,
+Room,
+Apppointment,
+Laboratory,
+Admission_Discharge,
+Bill,
+Insurance,
+Pharmacy,
+Prescription,
+MedicalRecords;
+
+CREATE TABLE Doctor (
+	DoctorID INT NOT NULL,
+    First_Name VARCHAR (30) NULL,
+    Last_Name VARCHAR (30) NULL,
+    DepartmentID INT,
+    SpecialtyID CHAR (6) NOT NULL,
+    DateOfBirth DATE NULL,
+    ContactNumber VARCHAR (15),
+    StreetAddress CHAR (30) NULL,
+    City VARCHAR (50) NULL,
+    Zip CHAR (5) NULL,
+    State CHAR (2) NULL,
+    DateOfEmployment DATE NOT NULL
+);
