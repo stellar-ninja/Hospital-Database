@@ -2,11 +2,11 @@ CREATE SCHEMA Hospital;
 USE Hospital;
 
 DROP TABLE IF EXISTS Doctor,
-Specialty,
 Patient,
 Nurse,
 AuthorizedStaff,
 Department,
+Specialty,
 Room,
 Apppointment,
 Laboratory,
@@ -18,32 +18,199 @@ Prescription,
 MedicalRecords;
 
 CREATE TABLE Doctor (
-	DoctorID INT NOT NULL,
-    First_Name VARCHAR (30) NULL,
-    Last_Name VARCHAR (30) NULL,
-    DepartmentID INT,
-    SpecialtyID CHAR (6) NOT NULL,
-    DateOfBirth DATE NULL,
-    ContactNumber VARCHAR (15),
-    StreetAddress CHAR (30) NULL,
-    City VARCHAR (50) NULL,
-    Zip CHAR (5) NULL,
-    State CHAR (2) NULL,
-    DateOfEmployment DATE NOT NULL
+    DoctorID INT PRIMARY KEY NOT NULL, -- Ex: 00101, 00201, 00301 (First three numbers'001', '002' refer to the doctor. The last two numbers '01' refers to the department they work in
+    First_Name VARCHAR (30) NOT NULL,
+    Last_Name VARCHAR (30) NOT NULL,
+    SpecialtyID INT NOT NULL,
+    DepartmentID INT NOT NULL, -- 01, 02, 03, etc.
+    Specialty CHAR (6) NOT NULL,
+    DateOfBirth DATE,
+    ContactNumber VARCHAR (20),
+    StreetAddress VARCHAR (100),
+    City VARCHAR (50),
+    Zip VARCHAR (10),
+    State CHAR (2),
+    DateOfEmployment DATE NOT NULL,
+    FOREIGN KEY (DepartmentID) REFERENCES Department (DepartmentID),
+    FOREIGN KEY (SpecialtyID) REFERENCES Specialty (SpecialtyID)
+);
+
+CREATE TABLE Specialty (
+    SpecialtyID CHAR (6) PRIMARY KEY NOT NULL, -- 'CARD' Cardiology, 'SURG' Surgery, 'PEDI' Pediatrician, 'NEUR' Neurology
+    SpecName VARCHAR (25), -- 'Cardiology', 'Surgery', 'Pediactric', etc
+    DepartmentID INT NOT NULL,
+    FOREIGN KEY (DepartmentID) REFERENCES Department (DepartmentID)
+);
+
+CREATE TABLE Department(
+    DepartmentID INT PRIMARY KEY NOT NULL,
+    DepartmentName VARCHAR (100) NOT NULL,
+    ContactNumber VARCHAR (15)
 );
 
 CREATE TABLE Patient (
-	PatientID CHAR (6) NOT NULL,
-    First_Name VARCHAR (30) NULL,
-    Last_Name VARCHAR (30) NULL,
-    DateOfBirth DATE NULL,
-    StreetAddress CHAR (30) NULL,
-    City VARCHAR (50) NULL,
-    Zip CHAR (5) NULL,
-    State CHAR (2) NULL,
+    PatientID INT PRIMARY KEY NOT NULL, -- Ex: PA001, PA002, PA003
+    First_Name VARCHAR (30) NOT NULL,
+    Last_Name VARCHAR (30) NOT NULL,
+    DateOfBirth DATE NOT NULL,
+    ContactNumber VARCHAR (20),
+    StreetAddress VARCHAR (100),
+    City VARCHAR (50),
+    Zip VARCHAR (10),
+    State CHAR (2),
     SSN VARCHAR (11) NOT NULL,
+    RecordID INT NOT NULL, -- 'REC01-PA001','REC02-PA001'. The first two numbers after 'REC' refers to the number of records this patient currenty has. The numbers after 'PA' refers to the patient ID
+    AppointmentID INT NOT NULL,
+    DoctorID INT NOT NULL,
+    NurseID INT NOT NULL,
+    RoomID INT NOT NULL,
+    BedID INT NOT NULL,
+    FOREIGN KEY (DoctorID) REFERENCES Doctor (DoctorID),
+    FOREIGN KEY (NurseID) REFERENCES Nurse (NurseID),
+    FOREIGN KEY (RoomID) REFERENCES Room (RoomID),
+    FOREIGN KEY (BedID) REFERENCES Room (BedID)
+);
+
+CREATE TABLE MedicalRecords(
+    RecordID INT PRIMARY KEY NOT NULL,
+    PatientID INT NOT NULL,
+    DoctorID INT NOT NULL,
+    Diagnosis TEXT,
+    DateOfEntry DATE,
+    FollowUpDate DATE,
+    TreatmentPlan TEXT,
+    FOREIGN KEY (PatientID) REFERENCES Patient (PatientID),
+    FOREIGN KEY (DoctorID) REFERENCES Doctor (DoctorID)
+);
+
+CREATE TABLE Nurse (
+	NurseID INT PRIMARY KEY NOT NULL, -- NUR001001, NUR00201. Like 'Doctor', the first 3 numbers refer the the nurse and the last two refer to the department they work in
+	First_Name VARCHAR (30),
+	Last_Name VARCHAR (30),
+	ContactNumber VARCHAR (20),
+	StreetAddress VARCHAR (100),
+	City VARCHAR (50),
+	Zip VARCHAR (10),
+	State CHAR (2),
+	DateOfEmployment DATE,
+	PatientID INT NOT NULL,
+	DepartmentID INT NOT NULL,
+	FOREIGN KEY (PatientID) REFERENCES Patient (PatientID),
+	FOREIGN KEY (DepartmentID) REFERENCES Department (DepartmentID)
+);
+
+CREATE TABLE Appointment (
+	AppointmentID INT PRIMARY KEY NOT NULL, -- 'APP01-PA001', 'APP04-PA002'
+	PatientID INT NOT NULL,
+	DoctorID INT NOT NULL,
+	AppointmentTime TIME,
+	AppointmemtDate DATE,
+	ReasonForVisit VARCHAR (250),
+	FOREIGN KEY (PatientID) REFERENCES Patient (PatientID),
+	FOREIGN KEY (DoctorID) REFERENCES Doctor (DoctorID)
+);
+
+CREATE TABLE Admission_Discharge (
+    PatientStatus VARCHAR (15) PRIMARY KEY NOT NULL, -- 'ADMITTED' or 'DISCHARGED'
+    PatientID INT NOT NULL,
+    DoctorID INT NOT NULL,
+    RoomID INT NOT NULL,
+    AdmissionDate DATE NOT NULL,
+    AdmissionTime TIME NOT NULL,
+    DischargeDate DATE NOT NULL,
+    DischargeTime TIME NOT NULL,
+    ReasonForVisit VARCHAR (250),
+    FOREIGN KEY (PatientID) REFERENCES Patient (PatientID),
+    FOREIGN KEY (DoctorID) REFERENCES Doctor (DoctorID),
+    FOREIGN KEY (RoomID) REFERENCES Room (RoomID)
+);
+
+CREATE TABLE Authorized_Staff(
+    EmployeeID INT NOT NULL,
+    First_Name VARCHAR (30) NOT NULL,
+    Last_Name VARCHAR (30) NOT NULL,
+    ContactNumber VARCHAR (20),
+    StreetAddress VARCHAR (100),
+    City VARCHAR (50),
+    Zip VARCHAR (10),
+    State CHAR (2),
+    DateOfEmployment DATE NOT NULL,
+    DateOfResignation DATE,
+    Employee_Role VARCHAR (50),
+    DepartmentID INT NOT NULL
+);
+
+CREATE TABLE Bill(
+    InvoiceID INT NOT NULL,
+    InvoiceDate DATE,
+    PatientID INT NOT NULL,
+    PatientAdmitDate DATE NOT NULL,
+    PatientAdmitTime TIME NOT NULL,
+    PatientDischargeDate DATE NOT NULL,
+    PatientDischargeTime TIME NOT NULL,
+    InsuranceID INT NOT NULL,
+    TotalAmount DECIMAL (10,2) NOT NULL,
+    DueDate DATE,
+    AmountPaid DECIMAL (10,2) NOT NULL,
+    PaymentStatus VARCHAR (20) NOT NULL, -- 'PAID', 'UNPAID', or 'PARTIAL'
+    PaymentMethod VARCHAR (30) NOT NULL, -- 'CASH', 'CREDIT/DEBIT', or 'CHECKING'
+    FOREIGN KEY (PatientID) REFERENCES Patient (PatientID),
+    FOREIGN KEY (InsuranceID) REFERENCES Insurance (InsuranceID),
+    FOREIGN KEY (PatientAdmitDate) REFERENCES Admission_Discharge (AdmissionDate),
+    FOREIGN KEY (PatientAdmitTime) REFERENCES Admission_Discharge(AdmissionTime),
+    FOREIGN KEY (PatientDischargeDate) REFERENCES Admission_Discharge(DischargeDate),
+    FOREIGN KEY (PatientDischargeTime) REFERENCES Admission_Discharge(DischargeTime)
+);
+
+CREATE TABLE Insurance(
+    InsuranceID INT NOT NULL,
+    PatientID INT NOT NULL,
+    InsuranceProvider VARCHAR (30),
+    AmountCoverage DECIMAL (10,2),
+    CoverageStartDate DATE NOT NULL,
+    CoverageEndDate DATE NOT NULL,
+    ContactNumber VARCHAR (20)
+);
+
+CREATE TABLE Room(
+    RoomID INT PRIMARY KEY NOT NULL,
+    BedID, INT NOT NULL,
+    PatientID INT NOT NULL,
+    RoomNumber VARCHAR(10),
+    BedStatus VARCHAR(20),
+    FOREIGN KEY (PatientID) REFERENCES Patient (PatientID)
+);
+	
+CREATE TABLE Pharmacy(
+	MedicineID INT PRIMARY KEY NOT NULL,
+	MedicineName VARCHAR (30) NOT NULL,
+	PharmacyName VARCHAR (30) NOT NULL,
+	StockQuantity INT NOT NULL CHECK (StockQuantity >= 0),
+	ExpiryDate DATE NOT NULL,
+	Price DECIMAL (10,2) NOT NULL CHECK (Price >= 0),
+	Manufacturer VARCHAR (100)
+);
+
+CREATE TABLE Prescription(
+    PrescriptionID INT PRIMARY KEY NOT NULL,
+    PatientID INT NOT NULL,
     RecordID INT NOT NULL,
-    RoomID
-    Gender
-    ContactNumber
-    AppointmentID
+    MedicineID INT NOT NULL,
+    Dosage VARCHAR (50) NOT NULL,
+    Duration VARCHAR (30) NOT NULL,
+    FOREIGN KEY (PatientID) REFERENCES Patient (PatientID),
+    FOREIGN KEY (RecordID) REFERENCES MedicalRecords (RecordID),
+    FOREIGN KEY (MedicineID) REFERENCES Pharmacy (MedicineID)
+);
+
+CREATE TABLE Laboratory(
+    LabTestID INT PRIMARY KEY NOT NULL,
+    PatientID INT NOT NULL,
+    DoctorID INT NOT NULL,
+    TestType VARCHAR (50) NOT NULL, -- 'Blood Test', 'X-Ray', 'Ultrasound', etc
+    TestResult TEXT,
+    LabTechnician VARCHAR (100) NOT NULL, -- Name of Lab Technician
+    DateConducted DATE NOT NULL,
+    FOREIGN KEY (PatientID) REFERENCES Patient (PatientID),
+    FOREIGN KEY (DoctorID) REFERENCES Doctors (DoctorID)
+);
